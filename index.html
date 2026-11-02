@@ -557,7 +557,8 @@ html.js.motore-ko #nomotore{display:block}
   function rec(k) { var r = REC9[k]; return r[2] + " " + cp(r[0], r[1]) + pgs(R9); }
   function barre(f) { var h = '<span class="br">', i; for (i = 1; i <= 4; i++) h += '<i class="b' + i + (i <= f ? " on" : "") + '"></i>'; return h + "</span>"; }
   function eh(k) { var e = EH[k]; return '<span class="eh">EHRA · ' + EH_CAT[e.cat] + " · " + e.ev + barre(e.f) + e.f + "/4</span> " + e.t + pgs("EHRA 2024, " + e.p); }
-  function st(nome, sez) { return ' <span class="pg">scheda tecnica (' + nome + (sez ? ", " + sez : "") + ")</span>"; }
+  function st(nome, sez) { return ' <span class="pg">scheda tecnica di ' + nome + (sez ? ", " + sez : "") + "</span>"; }
+  function sts(nomi, sez) { return ' <span class="pg">schede tecniche di ' + nomi + (sez ? ", " + sez : "") + "</span>"; }
   function dv() { return ' <span class="dv">DA VERIFICARE</span>'; }
 
   /* ═══ FUNZIONI DI CALCOLO (pure) ══════════════════════════════════════ */
@@ -874,7 +875,7 @@ html.js.motore-ko #nomotore{display:block}
     if (!e) {
       if (id === "proc" && (rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.procTerm))) e = "insufficienza renale terminale o dialisi: non si usa" + pgs("ESC 2022, p. 4030");
       if (id === "flec" && (rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.flec))) e = "ClCr sotto 35: controindicata" + pgs(T8b);
-      if (id === "mexi" && (rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.mexi))) e = "ClCr sotto 30: da non usare" + st("Mexiletine Clinigen, MHRA", "4.2");
+      if (id === "mexi" && (rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.mexi))) e = "ClCr sotto 30: da non usare" + st("mexiletina, MHRA", "4.2");
       if (id === "vera" && s.fe !== null && s.fe < SOGLIE.vera) e = "FE sotto il 40%: da evitare" + pgs(ERC39) + "; la FEVS ridotta è fra le controindicazioni" + pgs(T8c);
       if (id === "vera" && !e && s.emo === "instab") e = "instabilità emodinamica: da evitare" + pgs(ERC39);
     }
@@ -946,53 +947,53 @@ html.js.motore-ko #nomotore{display:block}
       o.dose.push("Bolo " + dd(0.01, 0.05, "0,01–0,05 mg/kg", P, "mg") + ", ripetibile ogni 5–15 min" + pgs(E7));
       o.dose.push("Infusione " + dd(0.02, 0.1, "0,02–0,1 mg/kg/h", P, "mg/h") + ", titolando su e giù del 25–50%" + pgs(E7));
       o.tetto = "nessun tetto assoluto nella fonte.";
-      o.rene = cl + "nessuna dose; «dosaggi più bassi» nell'insufficienza renale cronica, e dopo un'infusione lunga in terapia intensiva la sedazione dura molto di più" + st("Midazolam-hameln", "4.2, 4.4") + dv() + " di quanto ridurre.";
+      o.rene = cl + "nessuna dose; «dosaggi più bassi» nell'insufficienza renale cronica, e dopo un'infusione lunga in terapia intensiva la sedazione dura molto di più" + st("midazolam", "4.2, 4.4") + dv() + " di quanto ridurre.";
     }
     if (id === "lora") {
       o.ruolo = "benzodiazepina" + pgs("EHRA 2024, p. 13");
       o.dose.push("Bolo " + dd(0.02, 0.04, "0,02–0,04 mg/kg", P, "mg") + pgs(E7));
       o.dose.push("Infusione " + (N ? "<b>" + fra(N.lora.inf[0], N.lora.inf[1]) + " mg/h</b> (0,01–0,1 mg/kg/h)" : "<b>0,01–0,1 mg/kg/h</b>") + ", non oltre 10 mg/h" + pgs(E7));
       o.tetto = N && N.lora.tetto ? "a questo peso 0,1 mg/kg/h sarebbero " + nk(0.1 * P.p) + " mg/h: lo strumento si ferma a <b>10 mg/h</b>, il tetto della tabella." : "10 mg/h per l'infusione" + pgs(E7) + ".";
-      o.rene = cl + "«non raccomandato» nell'insufficienza renale; se si usa, nella lieve-moderata dose iniziale 0,05 mg/kg, non oltre 2 mg; il glicole propilenico dell'eccipiente si accumula" + st("Lorazepam Macure", "4.2, 4.4") + "; la scheda non dà la soglia di clearance" + dv() + ".";
-      o.note.push("Nessuna indicazione alla sedazione in terapia intensiva nella scheda tecnica italiana, l'unico lorazepam e.v." + st("Lorazepam Macure") + ".");
+      o.rene = cl + "«non raccomandato» nell'insufficienza renale; se si usa, nella lieve-moderata dose iniziale 0,05 mg/kg, non oltre 2 mg; il glicole propilenico dell'eccipiente si accumula" + st("lorazepam", "4.2, 4.4") + "; la scheda non dà la soglia di clearance" + dv() + ".";
+      o.note.push("Nessuna indicazione alla sedazione in terapia intensiva nella scheda tecnica italiana, l'unico lorazepam e.v." + st("lorazepam") + ".");
     }
     if (id === "propo") {
       o.ruolo = "sedazione profonda; inotropo negativo, con cautela nella cardiopatia strutturale" + pgs("EHRA 2024, p. 13") + "; può allungare il QT" + pgs(E15);
       o.dose.push("Bolo " + dd(0.8, 1.2, "0,8–1,2 mg/kg", P, "mg") + pgs(E7));
       o.dose.push("Infusione " + dd(0.3, 3, "5–50 µg/kg/min = 0,3–3 mg/kg/h", P, "mg/h") + ", aumentando ogni 5–10 min" + pgs(E7) + " — la tabella scrive gli incrementi in µg/kg/h e l'infusione in µg/kg/min.");
-      o.tetto = "nessun tetto assoluto nella fonte; la scheda tecnica, nel paziente ventilato in terapia intensiva, non oltre 4 mg/kg/h né 7 giorni" + st("Diprivan") + ".";
-      o.rene = cl + "cautela, senza numeri; metaboliti inattivi eliminati dal rene" + st("Diprivan", "4.4, 5.2") + ".";
+      o.tetto = "nessun tetto assoluto nella fonte; la scheda tecnica, nel paziente ventilato in terapia intensiva, non oltre 4 mg/kg/h né 7 giorni" + st("propofol") + ".";
+      o.rene = cl + "cautela, senza numeri; metaboliti inattivi eliminati dal rene" + st("propofol", "4.4, 5.2") + ".";
     }
     if (id === "fent") {
       o.ruolo = "oppioide a breve durata: prima linea anch'esso, poco inotropo negativo e molto analgesico" + pgs(E15);
       o.dose.push("Bolo " + dd(1, 2, "1–2 µg/kg", P, "µg") + pgs(E7));
       o.dose.push("Infusione " + dd(1, 2, "1–2 µg/kg/h", P, "µg/h") + pgs(E7));
       o.tetto = "nessun tetto assoluto nella fonte.";
-      o.rene = cl + "«dose ridotta» nella compromissione renale, senza soglia" + st("Fentanest", "4.2") + dv() + " di quanto ridurre.";
+      o.rene = cl + "«dose ridotta» nella compromissione renale, senza soglia" + st("fentanil", "4.2") + dv() + " di quanto ridurre.";
     }
     if (id === "remi") {
       o.ruolo = "oppioide a breve durata; la sua farmacocinetica non cambia con il rene o il fegato" + pgs(E15);
       o.dose.push("Bolo " + dd(0.5, 1.5, "0,5–1,5 µg/kg", P, "µg") + pgs(E7));
       o.dose.push("Infusione " + dd(0.05, 2, "0,05–2 µg/kg/min", P, "µg/min") + pgs(E7));
       o.tetto = "nessun tetto assoluto nella fonte.";
-      o.rene = cl + "nessuna modifica, anche in terapia intensiva" + st("Ultiva", "4.2") + ".";
-      o.note.push("La scheda tecnica vieta il bolo in terapia intensiva, che la tabella EHRA invece dà; è un analgesico, il sedativo si aggiunge" + st("Ultiva") + ".");
+      o.rene = cl + "nessuna modifica, anche in terapia intensiva" + st("remifentanil", "4.2") + ".";
+      o.note.push("La scheda tecnica vieta il bolo in terapia intensiva, che la tabella EHRA invece dà; è un analgesico, il sedativo si aggiunge" + st("remifentanil") + ".");
     }
     if (id === "dex") {
       o.ruolo = "seda senza deprimere il respiro, ma può dare ipotensione e bradicardia gravi" + pgs(E15);
       o.dose.push("Carico " + dd(1, null, "1 µg/kg", P, "µg") + " in 10 min" + pgs(E7));
       o.dose.push("Infusione " + dd(0.2, 0.7, "0,2–0,7 µg/kg/h", P, "µg/h") + pgs(E7));
-      o.tetto = "la scheda tecnica non va mai oltre 1,4 µg/kg/h" + st("Dexdor") + ".";
-      o.rene = cl + "nessun aggiustamento, farmacocinetica invariata anche con ClCr &lt;30" + st("Dexdor", "4.2, 5.2") + ".";
-      o.note.push("La scheda tecnica sconsiglia il carico in terapia intensiva e la controindica nel BAV II–III non stimolato e nell'ipotensione non controllata" + st("Dexdor") + ".");
+      o.tetto = "la scheda tecnica non va mai oltre 1,4 µg/kg/h" + st("dexmedetomidina") + ".";
+      o.rene = cl + "nessun aggiustamento, farmacocinetica invariata anche con ClCr &lt;30" + st("dexmedetomidina", "4.2, 5.2") + ".";
+      o.note.push("La scheda tecnica sconsiglia il carico in terapia intensiva e la controindica nel BAV II–III non stimolato e nell'ipotensione non controllata" + st("dexmedetomidina") + ".");
     }
     if (id === "prop") {
       o.ruolo = "betabloccante non selettivo, il preferito" + pgs(R9);
       x = N ? (N.prop.tetto ? "<b>10 mg</b> (0,15 mg/kg sarebbero " + nk(N.prop.bolo) + " mg)" : "<b>" + nk(N.prop.bolo) + " mg</b> (0,15 mg/kg)") : "<b>0,15 mg/kg</b>";
       o.dose.push("E.v.: bolo " + x + " in 10 min" + pgs(E8b) + "; poi 160 mg/24 h" + pgs(T8a + "; " + E8b) + "; con un infarto recente 160–320 mg/24 h" + pgs(E15) + ".");
       o.dose.push("Per bocca: 80–320 mg/die" + pgs(T8a) + "; nello studio contro il metoprololo era per bocca, con l'amiodarone e.v." + pgs("EHRA 2024, Advice Table 6, p. 22") + ".");
-      o.tetto = "la scheda tecnica e.v. (Francia; in Italia l'e.v. non c'è) non va oltre 10 mg da sveglio, 5 in anestesia, 1 mg/min" + st("Propranolol Acetlab, ANSM") + (N && N.prop.tetto ? ": lo strumento ferma il bolo a <b>10 mg</b>" : "") + ".";
-      o.rene = cl + "e.v.: prudenza nella dose iniziale, senza numeri" + st("Propranolol Acetlab, Francia", "4.4") + "; per bocca: Inderal mette l'«insufficienza renale» fra le controindicazioni senza grado, e chiede cautela nella dose iniziale" + st("Inderal 40 mg", "4.2–4.4") + dv() + " da quale grado vale.";
+      o.tetto = "la scheda tecnica e.v. (Francia; in Italia l'e.v. non c'è) non va oltre 10 mg da sveglio, 5 in anestesia, 1 mg/min" + st("propranololo e.v., ANSM") + (N && N.prop.tetto ? ": lo strumento ferma il bolo a <b>10 mg</b>" : "") + ".";
+      o.rene = cl + "e.v.: prudenza nella dose iniziale, senza numeri" + st("propranololo e.v., Francia", "4.4") + "; per bocca: la scheda mette l'«insufficienza renale» fra le controindicazioni senza grado, e chiede cautela nella dose iniziale" + st("propranololo 40 mg", "4.2–4.4") + dv() + " da quale grado vale.";
       o.conf = "Divergenza: la Tab. 8 della ESC dà solo i 160 mg/24 h e.v." + pgs(T8a) + "; il bolo per peso è dell'EHRA" + pgs(E8b) + ".";
       o.note.push(BBCI + ".");
     }
@@ -1001,7 +1002,7 @@ html.js.motore-ko #nomotore{display:block}
       o.dose.push("Bolo " + dd(0.5, null, "0,5 mg/kg", P, "mg") + " in 1 min" + pgs(E8b) + ".");
       o.dose.push("Infusione " + dd(25, 50, "25–50 µg/kg/min", P, "mg/h", 0.06) + ", titolando ogni 5–10 min fino a " + dd(250, null, "250 µg/kg/min", P, "mg/h", 0.06) + pgs(E8b) + ".");
       o.tetto = "250 µg/kg/min" + pgs(E8b) + "; l'ERC arriva a 300" + pgs(ERC39) + ": vale la lettura più prudente.";
-      o.rene = cl + "cautela, senza dose né soglia: il metabolita acido esce dal rene, con un'emivita circa 10 volte più lunga nell'insufficienza terminale; iperkaliemia in dialisi" + st("Brevibloc", "4.2, 4.4") + dv() + " quanto ridurre.";
+      o.rene = cl + "cautela, senza dose né soglia: il metabolita acido esce dal rene, con un'emivita circa 10 volte più lunga nell'insufficienza terminale; iperkaliemia in dialisi" + st("esmololo", "4.2, 4.4") + dv() + " quanto ridurre.";
       o.conf = "Divergenza: la ESC 2022 non dà una dose; l'ERC 2025 un bolo facoltativo di 500 µg/kg, poi 50–300 µg/kg/min" + pgs(ERC39) + ". Stesso bolo, infusione diversa: l'EHRA parte a metà e si ferma a 250.";
       o.note.push(BBCI + ".");
       o.note.push(CONF_FA.esmo);
@@ -1010,17 +1011,17 @@ html.js.motore-ko #nomotore{display:block}
       o.ruolo = "betabloccante β1 ultrabreve; efficace in due piccoli studi nelle TV non tollerate resistenti all'amiodarone, senza classe" + pgs("ESC 2022, p. 4032");
       o.dose.push("Bolo " + dd(100, null, "100 µg/kg", P, "mg", 0.001) + " in 1 min; infusione " + dd(10, 40, "10–40 µg/kg/min", P, "mg/h", 0.06) + pgs(T8a) + ".");
       o.tetto = "infusione fino a " + dd(80, null, "80 µg/kg/min", P, "mg/h", 0.06) + ", e non oltre " + dd(57.6, null, "57,6 mg/kg", P, "mg") + " nelle 24 h" + pgs(T8a) + "; poca esperienza oltre le 24 h" + pgs(T8a) + ".";
-      o.rene = cl + "nessun aggiustamento; si accumula un metabolita inattivo" + st("Landiobloc", "4.2, 4.4") + ".";
+      o.rene = cl + "nessun aggiustamento; si accumula un metabolita inattivo" + st("landiololo", "4.2, 4.4") + ".";
       o.conf = "Divergenza: l'ERC 2025 fa il bolo facoltativo, e con la funzione ventricolare ridotta scende a 1–10 µg/kg/min" + pgs(ERC39) + "; l'EHRA non lo dà.";
       o.note.push(BBCI + "; per il landiololo anche bradicardia e ipotensione" + pgs(T8a) + ".");
-      o.note.push("In Italia Landiobloc ha solo indicazioni sopraventricolari" + st("Landiobloc") + ".");
+      o.note.push("In Italia il landiololo ha solo indicazioni sopraventricolari" + st("landiololo") + ".");
       o.note.push(CONF_FA.land);
     }
     if (id === "meto") {
       o.ruolo = "betabloccante β1; con l'amiodarone e.v. il propranololo per bocca è preferito al metoprololo per bocca (" + eh("amioProp") + ")";
       o.dose.push("<b>2–5 mg</b> e.v. ogni 5 min, fino a 3 dosi in 15 min" + pgs(E8b) + " — dose fissa, non per peso.");
       o.tetto = "3 dosi in 15 min" + pgs(E8b) + "; l'ERC fino a 15 mg in boli da 2,5" + pgs(ERC39) + ".";
-      o.rene = cl + "nessun aggiustamento (4.2), ma la 4.3 controindica l'«insufficienza renale grave», senza soglia" + st("Seloken") + dv() + " la soglia di «grave».";
+      o.rene = cl + "nessun aggiustamento (4.2), ma la 4.3 controindica l'«insufficienza renale grave», senza soglia" + st("metoprololo") + dv() + " la soglia di «grave».";
       o.conf = "Divergenza: la ESC 2022 non dà la dose e.v.; l'EHRA 2–5 mg ogni 5 min, l'ERC 2,5–15 mg in boli da 2,5 mg" + pgs(ERC39) + ".";
       o.note.push(BBCI + ".");
     }
@@ -1029,7 +1030,7 @@ html.js.motore-ko #nomotore{display:block}
       o.dose.push("Carico " + dd(5, null, "5 mg/kg", P, "mg") + " in 20 min–2 h, ripetibile 2–3 volte nelle 24 h" + (N ? " (tre carichi: " + nk(N.amio.giorno) + " mg" + (N.amio.giorno > 1200 ? ", <b>oltre i 1200 mg/24 h</b>, il massimo che la Tab. 8 dà per i giorni dopo i carichi" : "") + ")" : "") + "; poi 600–1200 mg/24 h per 8–10 giorni" + pgs(T8a + "; " + E8b) + ".");
       o.dose.push("Chi è già in amiodarone può avere un nuovo carico" + pgs(E15) + ".");
       o.tetto = "per il singolo carico per peso né la ESC, né l'EHRA, né la scheda tecnica danno un tetto" + dv() + " il tetto del carico nel paziente pesante; dopo i carichi la Tab. 8 si ferma a 1200 mg/24 h per 8–10 giorni" + pgs(T8a) + ".";
-      o.rene = cl + "nessun aggiustamento: l'escrezione renale è trascurabile" + st("Cordarone", "5.2") + ".";
+      o.rene = cl + "nessun aggiustamento: l'escrezione renale è trascurabile" + st("amiodarone", "5.2") + ".";
       o.conf = "Divergenza: l'ERC 2025 dà una dose fissa, 300 mg in 10–60 min, poi 900 mg nelle 24 h" + pgs(ERC39) + (N ? "; qui il carico per peso è " + nk(N.amio.carico) + " mg" : "") + ". Peso contro dose fissa: la ESC viene prima.";
       o.note.push("Cautela con disfunzione sinusale, disturbi gravi della conduzione AV, ipertiroidismo" + pgs(T8a) + ".");
       o.note.push(CONF_FA.amio);
@@ -1040,7 +1041,7 @@ html.js.motore-ko #nomotore{display:block}
       x = N ? "<b>" + fra(N.lido.bolo[0], N.lido.bolo[1]) + " mg</b> (1–1,5 mg/kg" + (N.lido.boloT ? ", fermato a 200" : "") + "), poi <b>" + nk(N.lido.inf) + " mg/min</b> (0,02 mg/kg/min" + (N.lido.infT ? ", fermato a 4" : "") + ")" : "<b>1–1,5 mg/kg</b>, poi <b>0,02 mg/kg/min</b>";
       o.dose.push("Nell'ischemia acuta, per peso (EHRA): " + x + pgs(E15) + ".");
       o.tetto = "200 mg di bolo e 4 mg/min, i massimi della ESC" + pgs(T8b) + "; dose più bassa con flusso epatico ridotto — shock, betabloccante, scompenso grave" + pgs(T8b) + ".";
-      o.rene = cl + "nessuna soglia: cautela nelle nefropatie gravi, dove dose e velocità possono dover scendere; di regola nessun aggiustamento" + st("lidocaina Bioindustria, S.A.L.F., Noridem") + dv() + " di quanto ridurre nell'insufficienza grave.";
+      o.rene = cl + "nessuna soglia: cautela nelle nefropatie gravi, dove dose e velocità possono dover scendere; di regola nessun aggiustamento" + sts("lidocaina") + dv() + " di quanto ridurre nell'insufficienza grave.";
       o.conf = "Divergenza: mg fissi della ESC contro mg/kg del testo EHRA" + (N ? ": a " + nf(P.p) + " kg l'infusione per peso è " + nk(N.lido.inf) + " mg/min, contro 2–4" : "") + ".";
       o.note.push("Con un infarto recente: " + eh("blocIMA") + ".");
     }
@@ -1052,7 +1053,7 @@ html.js.motore-ko #nomotore{display:block}
       o.tetto = "500–750 mg di carico" + pgs(T8b + "; " + E8a) + ": vale anche per il carico per peso; lo strumento si ferma a 750.";
       o.rene = (rn.dialisi ? "<b>dialisi o insufficienza renale terminale: non si usa</b>" + pgs("ESC 2022, p. 4030")
         : (rn.crcl !== null && rn.crcl < SOGLIE.procTerm ? cl + "<b>insufficienza renale terminale: non si usa</b>" + pgs("ESC 2022, p. 4030") + "; la fonte non dà un numero, lo strumento la riconosce sotto 15 mL/min, lo stadio G5, come Tool TV" + dv() + " la soglia"
-        : cl + (rn.crcl !== null ? "non sotto 15: " : "") + "con l'insufficienza renale terminale non si usa" + pgs("ESC 2022, p. 4030") + ", che lo strumento riconosce nella dialisi e sotto 15 mL/min, lo stadio G5" + dv() + " la soglia; negli altri si accumula alle dosi abituali, senza soglia" + st("Biocoryl, AEMPS") + dv() + " la dose per fascia di clearance")) + ".";
+        : cl + (rn.crcl !== null ? "non sotto 15: " : "") + "con l'insufficienza renale terminale non si usa" + pgs("ESC 2022, p. 4030") + ", che lo strumento riconosce nella dialisi e sotto 15 mL/min, lo stadio G5" + dv() + " la soglia; negli altri si accumula alle dosi abituali, senza soglia" + st("procainamide, AEMPS") + dv() + " la dose per fascia di clearance")) + ".";
       if (avvisoAgg(rn, "proc")) o.note.push(avvisoAgg(rn, "proc"));
       o.conf = "Divergenza: le due integrazioni per peso non coincidono (EHRA 10–17, ERC 10–15 mg/kg), e il tetto della ESC resta.";
       o.note.push("Non con disfunzione sinusale grave, disturbi gravi della conduzione AV o intraventricolare, disfunzione VS severa, ipotensione, Brugada" + pgs(T8b) + "; né con scompenso grave, infarto acuto, insufficienza renale terminale" + pgs("ESC 2022, p. 4030") + ".");
@@ -1062,7 +1063,7 @@ html.js.motore-ko #nomotore{display:block}
       o.dose.push("Per bocca: carico <b>200 mg ogni 3 h</b> fino all'effetto, massimo 3 g nelle prime 24 h; poi <b>600–1600 mg/die</b>" + pgs(T8c) + ".");
       o.dose.push("E.v. (EHRA): carico <b>800 mg in 50 mL</b>, poi <b>50 µg/min</b>" + pgs(E8a) + "; la velocità del carico la dà solo l'AHA/ACC/HRS 2017, 50 mg/min (integrazione, p. 44); nessuna fonte dice il sale.");
       o.tetto = "3 g nelle prime 24 h" + pgs(T8c) + ".";
-      o.rene = cl + "nessuna scheda e.v.; per bocca il rene non è quantificato, il 10–20% esce immodificato nelle urine" + st("Kinidinesulfaat Teva; FDA") + dv() + " la dose per fascia di clearance.";
+      o.rene = cl + "nessuna scheda e.v.; per bocca il rene non è quantificato, il 10–20% esce immodificato nelle urine" + st("chinidina solfato, Paesi Bassi; etichetta FDA") + dv() + " la dose per fascia di clearance.";
       o.conf = "Divergenza: la ESC dà solo la via orale" + pgs(T8c) + ", l'EHRA aggiunge la via e.v." + pgs(E8a) + ".";
       o.note.push("Controindicata nel QT lungo" + pgs(T8c) + ".");
       o.note.push("La Tab. 8 la controindica anche con disfunzione sinusale grave, disturbi gravi della conduzione AV o intraventricolare, infarto pregresso, cardiopatia strutturale significativa e ipotensione" + pgs(T8c) + "; la stessa tabella la indica nella FV dell'infarto subacuto (nota c), e la Rec. Table 9 le dà la " + cp("IIb", "C") + " nella coronaropatia con tempesta da TV polimorfa" + pgs(R9) + ": incoerenza della fonte, la scelta resta clinica.");
@@ -1071,38 +1072,38 @@ html.js.motore-ko #nomotore{display:block}
       o.ruolo = "alza la frequenza e accorcia il QT" + pgs(T8b);
       o.dose.push("<b>0,5–10 µg/min</b> e.v., titolando sulla frequenza" + pgs(T8b + "; " + E8b) + " — dose fissa, non per peso.");
       o.tetto = "10 µg/min" + pgs(T8b) + ".";
-      o.rene = cl + "le schede tacciono; circa il 50% esce immodificato nelle urine" + st("Isoprenalina S.A.L.F.", "5.2") + "; l'EHRA mette la malattia renale fra le cautele" + pgs(E8b) + dv() + " se e quanto ridurre.";
+      o.rene = cl + "le schede tacciono; circa il 50% esce immodificato nelle urine" + st("isoprenalina", "5.2") + "; l'EHRA mette la malattia renale fra le cautele" + pgs(E8b) + dv() + " se e quanto ridurre.";
       o.note.push("Controindicato nella SCA e nel QT lungo" + pgs(T8b) + "; mai nella CPVT (" + eh("cpvtNo") + "); cautela con coronaropatia e ischemia" + pgs(E8b) + ".");
-      o.note.push("Nessuna scheda tecnica italiana ha un'indicazione aritmica ventricolare: uso fuori indicazione" + st("Isoprenalina S.A.L.F., Isonly") + ".");
+      o.note.push("Nessuna scheda tecnica italiana ha un'indicazione aritmica ventricolare: uso fuori indicazione" + sts("isoprenalina") + ".");
     }
     if (id === "mg") {
       o.ruolo = "torsione di punta, con il potassio " + cp("I", "C") + pgs(R9);
       o.dose.push("ERC 2025: <b>8 mmol</b> e.v. in 10 min, ripetibili una volta" + pgs(ERC39) + ".");
       o.dose.push("EHRA: <b>1–2 g</b> di magnesio solfato in 30–60 s, ripetibili dopo 5–15 min, con magnesiemia &lt;0,5 mmol/L e aritmia pericolosa" + pgs("EHRA 2024, Tab. 5, p. 9") + ".");
-      o.tetto = "dose fissa; con l'insufficienza renale grave la scheda non va oltre 20 g in 48 h" + st("Magnesio solfato S.A.L.F.", "4.2") + ".";
-      o.rene = cl + "controindicato nell'insufficienza renale grave, e si elimina solo dal rene" + st("Magnesio solfato S.A.L.F.", "4.2, 4.3") + dv() + " la soglia di clearance di «grave».";
+      o.tetto = "dose fissa; con l'insufficienza renale grave la scheda non va oltre 20 g in 48 h" + st("magnesio solfato", "4.2") + ".";
+      o.rene = cl + "controindicato nell'insufficienza renale grave, e si elimina solo dal rene" + st("magnesio solfato", "4.2, 4.3") + dv() + " la soglia di clearance di «grave».";
       o.conf = "Divergenza: la ESC 2022 non dà la dose. 8 mmol sono circa 2 g di solfato: la quantità coincide, la velocità no (10 min contro 30–60 s); la più prudente è quella dell'ERC (prontuario del capitolo).";
-      o.note.push("Le schede tecniche italiane non hanno la torsione fra le indicazioni (eclampsia, ipomagnesiemia, nutrizione parenterale) e controindicano i pazienti con aritmie cardiache o danno del miocardio: l'uso è fuori indicazione e contro una controindicazione scritta" + st("Magnesio solfato S.A.L.F.; uguali Monico, Galenica Senese, Bioindustria") + ".");
+      o.note.push("Le schede tecniche italiane non hanno la torsione fra le indicazioni (eclampsia, ipomagnesiemia, nutrizione parenterale) e controindicano i pazienti con aritmie cardiache o danno del miocardio: l'uso è fuori indicazione e contro una controindicazione scritta" + sts("magnesio solfato, quattro prodotti uguali") + ".");
     }
     if (id === "k") {
       o.ruolo = "con il magnesio nella torsione di punta " + cp("I", "C") + pgs(R9);
       o.dose.push("<b>20–40 mmol/L</b> di KCl in 500 mL di fisiologica, <b>non oltre 20 mmol/h</b>; più veloce solo in emergenza, da vena centrale" + pgs("EHRA 2024, Tab. 5, p. 8") + "; obiettivo il limite alto della norma" + pgs("EHRA 2024, p. 12") + ".");
-      o.tetto = "20 mmol/h" + pgs("EHRA 2024, Tab. 5, p. 8") + "; la scheda tecnica di regola 10 mEq/h, metà dell'EHRA: nel dubbio la più bassa" + st("Potassio cloruro Monico", "4.2") + ".";
-      o.rene = cl + "solo a funzione renale integra; controindicato nell'insufficienza renale grave" + st("Potassio cloruro Monico", "4.2, 4.3") + dv() + " la soglia di clearance.";
+      o.tetto = "20 mmol/h" + pgs("EHRA 2024, Tab. 5, p. 8") + "; la scheda tecnica di regola 10 mEq/h, metà dell'EHRA: nel dubbio la più bassa" + st("potassio cloruro", "4.2") + ".";
+      o.rene = cl + "solo a funzione renale integra; controindicato nell'insufficienza renale grave" + st("potassio cloruro", "4.2, 4.3") + dv() + " la soglia di clearance.";
       o.conf = "Divergenza: la ESC 2022 chiede il supplemento senza dare la dose" + pgs(R9) + ".";
     }
     if (id === "vera") {
       o.ruolo = "FV idiopatica, nella tempesta o con scariche ripetute " + cp("IIa", "C") + pgs(R40);
       o.dose.push("<b>5–10 mg</b> e.v. in bolo lento, ripetibile dopo 30 min" + pgs(T8c) + " — dose fissa.");
       o.tetto = "due boli" + pgs(T8c) + ".";
-      o.rene = cl + "cautela, nessun aggiustamento né soglia" + st("Isoptin", "4.4") + ".";
+      o.rene = cl + "cautela, nessun aggiustamento né soglia" + st("verapamil", "4.4") + ".";
       o.note.push("Non con FEVS ridotta, disfunzione sinusale, disturbi gravi della conduzione AV, TV di origine ignota, SCA, WPW" + pgs(T8c) + "; l'ERC lo evita con instabilità o FE &lt;40%" + pgs(ERC39) + ".");
     }
     if (id === "mexi") {
       o.ruolo = "QT lungo di tipo 3 " + cp("I", "C") + pgs(R41) + "; in Italia non c'è una mexiletina antiaritmica";
       o.dose.push("Per bocca: carico <b>400 mg</b>, poi <b>600 mg</b> nelle prime 24 h; mantenimento <b>600–1200 mg/die</b>" + pgs(T8b + "; " + E8a) + "; per via e.v. non raccomandata" + pgs(E8a) + ".");
       o.tetto = "1200 mg/die" + pgs(T8b) + ".";
-      o.rene = rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.mexi) ? cl + "<b>sotto 30 non si usa</b>, per mancanza di esperienza" + st("Mexiletine Clinigen, MHRA", "4.2") + "." : cl + (rn.crcl !== null ? "non sotto 30: " : "") + "nessun aggiustamento nella lieve-moderata; sotto 30 non si usa" + st("Mexiletine Clinigen, MHRA", "4.2") + "; Namuscla la sconsiglia nella grave, senza soglia" + st("Namuscla, EMA") + ".";
+      o.rene = rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.mexi) ? cl + "<b>sotto 30 non si usa</b>, per mancanza di esperienza" + st("mexiletina, MHRA", "4.2") + "." : cl + (rn.crcl !== null ? "non sotto 30: " : "") + "nessun aggiustamento nella lieve-moderata; sotto 30 non si usa" + st("mexiletina, MHRA", "4.2") + "; la scheda europea per la miotonia la sconsiglia nella grave, senza soglia" + st("mexiletina, EMA") + ".";
       if (avvisoAgg(rn, "mexi")) o.note.push(avvisoAgg(rn, "mexi"));
       o.note.push("Non con disfunzione sinusale, disturbi gravi della conduzione AV, scompenso grave" + pgs(T8b) + ".");
     }
@@ -1112,11 +1113,11 @@ html.js.motore-ko #nomotore{display:block}
       // ClCr <=35, parte da 100 mg/die con i livelli: dose iniziale ridotta, come il
       // prontuario (gruppo 5) e come Tool TV per l'e.v. (dimezzata a 35 esatti).
       x = !rn.dialisi && rn.crcl !== null && rn.crcl >= SOGLIE.flec && r1(rn.crcl) <= SOGLIE.flec;
-      o.dose.push("Per bocca <b>200–400 mg/die</b>" + pgs(T8b) + (x ? "; con ClCr ≤35 la scheda tecnica parte da <b>100 mg/die</b> (o 50 mg × 2), poi i livelli plasmatici" + st("Almarytm", "4.2") : "") + "; sospendere se il QRS si allarga oltre il 25% o compare un blocco di branca" + pgs(T8b) + ".");
+      o.dose.push("Per bocca <b>200–400 mg/die</b>" + pgs(T8b) + (x ? "; con ClCr ≤35 la scheda tecnica parte da <b>100 mg/die</b> (o 50 mg × 2), poi i livelli plasmatici" + st("flecainide", "4.2") : "") + "; sospendere se il QRS si allarga oltre il 25% o compare un blocco di branca" + pgs(T8b) + ".");
       o.tetto = "400 mg/die" + pgs(T8b) + ".";
-      o.rene = rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.flec) ? cl + "<b>sotto 35 mL/min/1,73 m² è controindicata</b>" + pgs(T8b) + "; la scheda tecnica la usa ancora, da 100 mg/die con i livelli plasmatici" + st("Almarytm", "4.2") + ": vale la fonte, più prudente."
-        : (x ? cl + "la fonte la esclude solo sotto 35 mL/min/1,73 m²" + pgs(T8b) + "; con ClCr ≤35 la scheda tecnica parte da 100 mg/die (o 50 mg × 2) e chiede i livelli plasmatici" + st("Almarytm", "4.2") + ": <b>dose iniziale ridotta</b>."
-        : cl + (rn.crcl !== null ? "non sotto 35: " : "") + "controindicata sotto 35 mL/min/1,73 m²" + pgs(T8b) + "; con ClCr ≤35 la scheda tecnica parte da 100 mg/die con i livelli plasmatici" + st("Almarytm", "4.2") + ".");
+      o.rene = rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.flec) ? cl + "<b>sotto 35 mL/min/1,73 m² è controindicata</b>" + pgs(T8b) + "; la scheda tecnica la usa ancora, da 100 mg/die con i livelli plasmatici" + st("flecainide", "4.2") + ": vale la fonte, più prudente."
+        : (x ? cl + "la fonte la esclude solo sotto 35 mL/min/1,73 m²" + pgs(T8b) + "; con ClCr ≤35 la scheda tecnica parte da 100 mg/die (o 50 mg × 2) e chiede i livelli plasmatici" + st("flecainide", "4.2") + ": <b>dose iniziale ridotta</b>."
+        : cl + (rn.crcl !== null ? "non sotto 35: " : "") + "controindicata sotto 35 mL/min/1,73 m²" + pgs(T8b) + "; con ClCr ≤35 la scheda tecnica parte da 100 mg/die con i livelli plasmatici" + st("flecainide", "4.2") + ".");
       if (avvisoAgg(rn, "flec")) o.note.push(avvisoAgg(rn, "flec"));
       o.note.push("Non con infarto pregresso, cardiopatia strutturale significativa, Brugada, disfunzione sinusale grave, disturbi gravi della conduzione AV o intraventricolare, QT lungo congenito salvo il tipo 3" + pgs(T8b) + ".");
     }
