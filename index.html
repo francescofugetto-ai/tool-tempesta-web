@@ -194,6 +194,7 @@ document.addEventListener("input",function(ev){
   .foot strong { color:var(--text-secondary); }
   .farm { border-left:4px solid var(--border-strong); }
   .farm.s-nel { border-left-color:var(--k1); }
+  .farm.s-ris { border-left-color:var(--k2); }
   .farm.s-evita { border-left-color:var(--k4); }
   .farm.s-altro { border-left-color:var(--border-strong); }
   .farm .nome { font-family:var(--display); font-size:20px; font-weight:700; line-height:1.15; }
@@ -473,8 +474,16 @@ html.js.motore-ko #nomotore{display:block}
        III-IV 6, FE <25% 3, tempesta 5, diabete 3; basso <=8, intermedio 9-14,
        alto >=15) e il suo uso p. 18.
      Dosi e rene: prontuario del capitolo (ESC Tab. 8 pp. 4035-4037; EHRA
-       Tab. 5, 7, 8; ERC 2025 pp. 9, 39; schede tecniche). */
-  var SOGLIE = { bmiAgg:30, flec:35, mexi:30, umol:88.4, etaMin:18, etaMax:110, pesoMin:25, pesoMax:250,
+       Tab. 5, 7, 8; ERC 2025 pp. 9, 39; schede tecniche).
+     Rene senza numero nella scheda (regole del medico del 23-24/10 e del
+       01/11/2026; scelte dell'11/11/2026): «grave» = ClCr <30 (metoprololo,
+       magnesio, potassio); «insufficienza» o «compromissione renale» senza
+       grado = ClCr <60 (landiololo, propranololo per bocca, potassio). Due
+       frasi della scheda che non si accordano: nessuna dose, decide il centro
+       (landiololo) o lo specialista (propranololo per bocca, magnesio sotto
+       30, potassio fra 30 e 60); la carta e' «con riserva». Metoprololo sotto
+       30 e potassio sotto 30: da evitare. Senza clearance la dose e' «—». */
+  var SOGLIE = { bmiAgg:30, flec:35, mexi:30, grave:30, irc:60, umol:88.4, etaMin:18, etaMax:110, pesoMin:25, pesoMax:250,
                  epMax:100, feMin:5, feMax:80, propBoloMax:10, lidoBoloMax:200, lidoInfMax:4, procMax:750,
                  loraInfMax:10, vera:40, procTerm:15, painBasso:8, painAlto:15, painEta:60, painFe:25 };
 
@@ -546,6 +555,18 @@ html.js.motore-ko #nomotore{display:block}
   /* ═══ FUNZIONI DI SCRITTURA (pure) ════════════════════════════════════ */
   function r1(x) { return Math.round(x * 10) / 10; }
   function nf(x, d) { if (d === 0) x = Math.round(x); else x = r1(x); return String(x).replace(".", ","); }
+  // Una clearance che l'arrotondamento porterebbe proprio su una soglia senza
+  // esserlo si scrive con i decimali che servono: «29,96», non «30» accanto a
+  // «sotto 30» (come Tool TV).
+  function nfCl(x, intero) {
+    var S = [SOGLIE.procTerm, SOGLIE.grave, SOGLIE.flec, SOGLIE.irc], a = r1(x), i, d, q;
+    if (intero) a = Math.round(x);
+    for (i = 0; i < S.length; i++) if (a === S[i] && x !== a) {
+      if (intero && r1(x) !== a) return nf(x);
+      for (d = 2; d < 8; d++) { q = Math.pow(10, d); if (Math.round(x * q) / q !== a) return String(Math.round(x * q) / q).replace(".", ","); }
+    }
+    return nf(x, intero ? 0 : undefined);
+  }
   // dosi: sotto 1 due decimali, sotto 100 uno, poi interi; niente «,0»
   function nk(x) {
     var v = x < 1 ? Math.round(x * 100) / 100 : (x < 100 ? Math.round(x * 10) / 10 : Math.round(x));
@@ -606,13 +627,18 @@ html.js.motore-ko #nomotore{display:block}
   // Le soglie di clearance che questo strumento usa: flecainide <35 (ESC
   // Tab. 8, p. 4036), mexiletina <30 (scheda tecnica britannica) e
   // procainamide <15 (p. 4030 dice «end-stage renal disease» senza numero:
-  // stadio G5 o dialisi, come Tool TV — DA VERIFICARE).
+  // stadio G5 o dialisi, come Tool TV — DA VERIFICARE). E le letture del
+  // medico per le schede senza numero: 30 per metoprololo, magnesio e
+  // potassio, 60 per landiololo, propranololo per bocca e potassio.
   function incroci(rn) {
     var o = [];
     if (rn.crcl === null || rn.agg === null || rn.dialisi) return o;
-    if ((rn.crcl < SOGLIE.flec) !== (rn.agg < SOGLIE.flec)) o.push({ f:"flec", nome:"flecainide", s:"35" });
-    if ((rn.crcl < SOGLIE.mexi) !== (rn.agg < SOGLIE.mexi)) o.push({ f:"mexi", nome:"mexiletina", s:"30" });
-    if ((rn.crcl < SOGLIE.procTerm) !== (rn.agg < SOGLIE.procTerm)) o.push({ f:"proc", nome:"procainamide", s:"15" });
+    function lati(x) { return (rn.crcl < x) !== (rn.agg < x); }
+    if (lati(SOGLIE.flec)) o.push({ f:"flec", nome:"flecainide", s:"35" });
+    if (lati(SOGLIE.mexi)) o.push({ f:"mexi", nome:"mexiletina", s:"30" });
+    if (lati(SOGLIE.procTerm)) o.push({ f:"proc", nome:"procainamide", s:"15" });
+    if (lati(SOGLIE.grave)) o.push({ f:"meto", nome:"metoprololo", s:"30" }, { f:"mg", nome:"magnesio", s:"30" }, { f:"k", nome:"potassio", s:"30" });
+    if (lati(SOGLIE.irc)) o.push({ f:"land", nome:"landiololo", s:"60" }, { f:"prop", nome:"propranololo per bocca", s:"60" }, { f:"k", nome:"potassio", s:"60" });
     return o;
   }
 
@@ -876,6 +902,8 @@ html.js.motore-ko #nomotore{display:block}
       if (id === "proc" && (rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.procTerm))) e = "insufficienza renale terminale o dialisi: non si usa" + pgs("ESC 2022, p. 4030");
       if (id === "flec" && (rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.flec))) e = "ClCr sotto 35: controindicata" + pgs(T8b);
       if (id === "mexi" && (rn.dialisi || (rn.crcl !== null && rn.crcl < SOGLIE.mexi))) e = "ClCr sotto 30: da non usare" + st("mexiletina, MHRA", "4.2");
+      if (id === "meto" && reneDose("meto", rn) === "no") e = (rn.dialisi ? "dialisi" : "ClCr sotto 30") + ": «insufficienza renale grave» fra le controindicazioni, grave = ClCr &lt;30, lettura nostra" + st("metoprololo", "4.3");
+      if (id === "k" && reneDose("k", rn) === "no") e = (rn.dialisi ? "dialisi" : "ClCr sotto 30") + ": «grave insufficienza … renale» fra le controindicazioni, grave = ClCr &lt;30, lettura nostra" + st("potassio cloruro", "4.3");
       if (id === "vera" && s.fe !== null && s.fe < SOGLIE.vera) e = "FE sotto il 40%: da evitare" + pgs(ERC39) + "; la FEVS ridotta è fra le controindicazioni" + pgs(T8c);
       if (id === "vera" && !e && s.emo === "instab") e = "instabilità emodinamica: da evitare" + pgs(ERC39);
     }
@@ -884,6 +912,9 @@ html.js.motore-ko #nomotore{display:block}
     if (dentro) {
       motivo = "nel ramo «" + nomeRamo(s, r) + "»";
       if (NEL[k].indexOf(id) < 0 && id !== "mexi") motivo += ", per la cardiopatia strutturale (riga I B, p. 4034)";
+      // il rene toglie la dose senza che la scheda lo vieti del tutto: «con riserva»
+      if (!e && reneDose(id, rn) === "ris")
+        return { st:"ris", why:motivo + "; ma " + (rn.dialisi ? "in dialisi" : (id === "land" ? "sotto 60" : (id === "mg" ? "sotto 30" : "fra 30 e 60")) + " mL/min") + " nessuna dose: decide " + (id === "land" ? "il centro" : "lo specialista") };
       return { st:"nel", why:motivo + (e ? "; ma " + e : "") };
     }
     return { st:"altro", why:ALTRO[id] && k === "mono" ? ALTRO[id] : "non nel percorso di questo ramo" };
@@ -906,13 +937,32 @@ html.js.motore-ko #nomotore{display:block}
   function clTesto(rn) {
     if (rn.dialisi) return "dialisi o insufficienza renale terminale: ";
     if (rn.crcl === null) return "";
-    return "ClCr " + nf(rn.crcl) + " mL/min sul peso reale: ";
+    return "ClCr " + nfCl(rn.crcl) + " mL/min sul peso reale: ";
   }
   function avvisoAgg(rn, id) {
-    var x = incroci(rn), i;
-    for (i = 0; i < x.length; i++) if (x[i].f === id) return "<b>Peso aggiustato</b>: clearance " + nf(rn.agg) + " mL/min, dall'altra parte della soglia di " + x[i].s + ". Decide il peso reale (decisione del medico, 03/10/2026); la scelta resta clinica.";
-    return "";
+    var x = incroci(rn), i, sg = [];
+    for (i = 0; i < x.length; i++) if (x[i].f === id) sg.push(x[i].s);
+    if (!sg.length) return "";
+    return "<b>Peso aggiustato</b>: clearance " + nfCl(rn.agg) + " mL/min, dall'altra parte della soglia di " + sg.join(" e di ") + ". Decide il peso reale (decisione del medico, 03/10/2026); la scelta resta clinica.";
   }
+  // Rene che decide se la dose c'e' (scelte del medico dell'11/11/2026).
+  // no = da non dare (la scheda lo controindica e nessuna frase la contraddice);
+  // ris = nessuna dose, decide il centro o lo specialista (due frasi che non si
+  // accordano); manca = serve la clearance; ok = la dose resta.
+  function reneDose(id, rn) {
+    var c = rn.crcl, sotto30 = rn.dialisi || (c !== null && c < SOGLIE.grave), sotto60 = rn.dialisi || (c !== null && c < SOGLIE.irc);
+    if (id === "meto") return sotto30 ? "no" : (c === null ? "manca" : "ok");
+    if (id === "land" || id === "propOs") return sotto60 ? "ris" : (c === null ? "manca" : "ok");
+    if (id === "mg") return sotto30 ? "ris" : (c === null ? "manca" : "ok");
+    if (id === "k") return sotto30 ? "no" : (sotto60 ? "ris" : (c === null ? "manca" : "ok"));
+    return "ok";
+  }
+  function serveCl(rn, cosa) {
+    return '— <span class="muted">serve la clearance (' + rn.cl.manca.join(", ") + "): " + cosa + "</span>";
+  }
+  function clQui(rn) { return rn.dialisi ? "in dialisi" : "ClCr " + nfCl(rn.crcl) + " mL/min"; }
+  // «Nessuna dose: ClCr 28,3 mL/min, sotto 30 mL/min da non dare (il rene, qui sotto).»
+  function nd(rn, soglia, cosa, min) { return "<b>" + (min ? "n" : "N") + "essuna dose</b>: " + (rn.dialisi ? "in dialisi, " : clQui(rn) + ", " + soglia + " ") + cosa + " (il rene, qui sotto)."; }
 
   // Numeri per peso: una funzione sola, collaudabile da sola.
   function numeri(p) {
@@ -991,9 +1041,18 @@ html.js.motore-ko #nomotore{display:block}
       o.ruolo = "betabloccante non selettivo, il preferito" + pgs(R9);
       x = N ? (N.prop.tetto ? "<b>10 mg</b> (0,15 mg/kg sarebbero " + nk(N.prop.bolo) + " mg)" : "<b>" + nk(N.prop.bolo) + " mg</b> (0,15 mg/kg)") : "<b>0,15 mg/kg</b>";
       o.dose.push("E.v.: bolo " + x + " in 10 min" + pgs(E8b) + "; poi 160 mg/24 h" + pgs(T8a + "; " + E8b) + "; con un infarto recente 160–320 mg/24 h" + pgs(E15) + ".");
-      o.dose.push("Per bocca: 80–320 mg/die" + pgs(T8a) + "; nello studio contro il metoprololo era per bocca, con l'amiodarone e.v." + pgs("EHRA 2024, Advice Table 6, p. 22") + ".");
+      var studioOs = "nello studio contro il metoprololo era per bocca, con l'amiodarone e.v." + pgs("EHRA 2024, Advice Table 6, p. 22") + ".";
+      x = reneDose("propOs", rn);
+      if (x === "ris") o.dose.push("Per bocca: " + nd(rn, "sotto 60 mL/min", "decide lo specialista", true) + " " + studioOs.charAt(0).toUpperCase() + studioOs.slice(1));
+      else if (x === "manca") o.dose.push("Per bocca: " + serveCl(rn, "sotto 60 mL/min nessuna dose") + "; " + studioOs);
+      else o.dose.push("Per bocca: 80–320 mg/die" + pgs(T8a) + "; " + studioOs);
       o.tetto = "la scheda tecnica e.v. (Francia; in Italia l'e.v. non c'è) non va oltre 10 mg da sveglio, 5 in anestesia, 1 mg/min" + st("propranololo e.v., ANSM") + (N && N.prop.tetto ? ": lo strumento ferma il bolo a <b>10 mg</b>" : "") + ".";
-      o.rene = cl + "e.v.: prudenza nella dose iniziale, senza numeri" + st("propranololo e.v., Francia", "4.4") + "; per bocca: la scheda mette l'«insufficienza renale» fra le controindicazioni senza grado, e chiede cautela nella dose iniziale" + st("propranololo 40 mg", "4.2–4.4") + dv() + " da quale grado vale.";
+      var propDue = "«insufficienza renale» fra le controindicazioni (4.3), senza grado: ClCr &lt;60, lettura nostra; la 4.2 e la 4.4 chiedono soltanto attenzione nella dose iniziale: le due frasi non si accordano" + st("propranololo 40 mg", "4.2, 4.3, 4.4");
+      o.rene = cl + "e.v.: prudenza nella dose iniziale, senza numeri" + st("propranololo e.v., Francia", "4.4") + ". Per bocca: " +
+        (x === "ris" ? (rn.dialisi ? "" : "<b>sotto 60</b>: ") + propDue + ". <b>Nessuna dose per bocca: decide lo specialista.</b>"
+        : (x === "manca" ? "— sotto 60 mL/min " + propDue + "."
+        : "da 60 in su nessuna delle due frasi si applica" + st("propranololo 40 mg", "4.2–4.4") + "."));
+      if (avvisoAgg(rn, "prop")) o.note.push(avvisoAgg(rn, "prop"));
       o.conf = "Divergenza: la Tab. 8 della ESC dà solo i 160 mg/24 h e.v." + pgs(T8a) + "; il bolo per peso è dell'EHRA" + pgs(E8b) + ".";
       o.note.push(BBCI + ".");
     }
@@ -1009,20 +1068,33 @@ html.js.motore-ko #nomotore{display:block}
     }
     if (id === "land") {
       o.ruolo = "betabloccante β1 ultrabreve; efficace in due piccoli studi nelle TV non tollerate resistenti all'amiodarone, senza classe" + pgs("ESC 2022, p. 4032");
-      o.dose.push("Bolo " + dd(100, null, "100 µg/kg", P, "mg", 0.001) + " in 1 min; infusione " + dd(10, 40, "10–40 µg/kg/min", P, "mg/h", 0.06) + pgs(T8a) + ".");
-      o.tetto = "infusione fino a " + dd(80, null, "80 µg/kg/min", P, "mg/h", 0.06) + ", e non oltre " + dd(57.6, null, "57,6 mg/kg", P, "mg") + " nelle 24 h" + pgs(T8a) + "; poca esperienza oltre le 24 h" + pgs(T8a) + ".";
-      o.rene = cl + "nessun aggiustamento; si accumula un metabolita inattivo" + st("landiololo", "4.2, 4.4") + ".";
-      o.conf = "Divergenza: l'ERC 2025 fa il bolo facoltativo, e con la funzione ventricolare ridotta scende a 1–10 µg/kg/min" + pgs(ERC39) + "; l'EHRA non lo dà.";
+      x = reneDose("land", rn);
+      if (x === "ris") o.dose.push("<b>Nessuna dose in mg</b>: decide il centro, con le due frasi della scheda tecnica (il rene, qui sotto).");
+      else if (x === "manca") o.dose.push(serveCl(rn, "sotto 60 mL/min decide il centro") + ".");
+      else o.dose.push("Bolo " + dd(100, null, "100 µg/kg", P, "mg", 0.001) + " in 1 min; infusione " + dd(10, 40, "10–40 µg/kg/min", P, "mg/h", 0.06) + pgs(T8a) + ".");
+      o.tetto = x !== "ok" ? "" : "infusione fino a " + dd(80, null, "80 µg/kg/min", P, "mg/h", 0.06) + ", e non oltre " + dd(57.6, null, "57,6 mg/kg", P, "mg") + " nelle 24 h" + pgs(T8a) + "; poca esperienza oltre le 24 h" + pgs(T8a) + ".";
+      var landDue = "la scheda tecnica scrive insieme «Non è richiesta alcuna modifica della dose» e «La farmacocinetica in pazienti con compromissione renale lieve o moderata non è stata valutata»; cautela per l'accumulo del metabolita M1, inattivo; nessuna precauzione particolare in terapia sostitutiva" + st("landiololo", "4.2, 4.4, 5.2") + ": <b>decide il centro, con le due frasi</b>";
+      o.rene = cl + (x === "ris" ? (rn.dialisi ? "" : "<b>sotto 60</b> (compromissione renale, lettura nostra): ") + landDue
+        : (x === "manca" ? "— sotto 60 mL/min (compromissione renale, lettura nostra) " + landDue
+        : "da 60 in su nessuna modifica" + st("landiololo", "4.2") + "; la scheda non ha valutato la compromissione «lieve o moderata»" + st("landiololo", "5.2") + ", qui letta sotto 60 (lettura nostra)")) + ".";
+      if (avvisoAgg(rn, "land")) o.note.push(avvisoAgg(rn, "land"));
+      // senza dose, niente numeri nel confronto (come Tool TV)
+      o.conf = x !== "ok" ? "" : "Divergenza: l'ERC 2025 fa il bolo facoltativo, e con la funzione ventricolare ridotta scende a 1–10 µg/kg/min" + pgs(ERC39) + "; l'EHRA non lo dà.";
       o.note.push(BBCI + "; per il landiololo anche bradicardia e ipotensione" + pgs(T8a) + ".");
       o.note.push("In Italia il landiololo ha solo indicazioni sopraventricolari" + st("landiololo") + ".");
-      o.note.push(CONF_FA.land);
+      if (x === "ok") o.note.push(CONF_FA.land);
     }
     if (id === "meto") {
       o.ruolo = "betabloccante β1; con l'amiodarone e.v. il propranololo per bocca è preferito al metoprololo per bocca (" + eh("amioProp") + ")";
-      o.dose.push("<b>2–5 mg</b> e.v. ogni 5 min, fino a 3 dosi in 15 min" + pgs(E8b) + " — dose fissa, non per peso.");
-      o.tetto = "3 dosi in 15 min" + pgs(E8b) + "; l'ERC fino a 15 mg in boli da 2,5" + pgs(ERC39) + ".";
-      o.rene = cl + "nessun aggiustamento (4.2), ma la 4.3 controindica l'«insufficienza renale grave», senza soglia" + st("metoprololo") + dv() + " la soglia di «grave».";
-      o.conf = "Divergenza: la ESC 2022 non dà la dose e.v.; l'EHRA 2–5 mg ogni 5 min, l'ERC 2,5–15 mg in boli da 2,5 mg" + pgs(ERC39) + ".";
+      x = reneDose("meto", rn);
+      if (x === "no") o.dose.push(nd(rn, "sotto 30 mL/min", "da non dare"));
+      else if (x === "manca") o.dose.push(serveCl(rn, "sotto 30 mL/min da non dare") + ".");
+      else o.dose.push("<b>2–5 mg</b> e.v. ogni 5 min, fino a 3 dosi in 15 min" + pgs(E8b) + " — dose fissa, non per peso.");
+      o.tetto = x !== "ok" ? "" : "3 dosi in 15 min" + pgs(E8b) + "; l'ERC fino a 15 mg in boli da 2,5" + pgs(ERC39) + ".";
+      o.rene = cl + "«non è necessario alcun aggiustamento» (4.2), ma l'«insufficienza renale grave» è fra le controindicazioni (4.3), senza soglia: grave = ClCr &lt;30, lettura nostra" + st("metoprololo, 1 mg/ml e compresse", "4.2, 4.3") +
+        (x === "no" ? ": <b>da non dare</b>." : (x === "manca" ? "." : ": da 30 in su nessun aggiustamento."));
+      if (avvisoAgg(rn, "meto")) o.note.push(avvisoAgg(rn, "meto"));
+      o.conf = x !== "ok" ? "" : "Divergenza: la ESC 2022 non dà la dose e.v.; l'EHRA 2–5 mg ogni 5 min, l'ERC 2,5–15 mg in boli da 2,5 mg" + pgs(ERC39) + ".";
       o.note.push(BBCI + ".");
     }
     if (id === "amio") {
@@ -1078,18 +1150,39 @@ html.js.motore-ko #nomotore{display:block}
     }
     if (id === "mg") {
       o.ruolo = "torsione di punta, con il potassio " + cp("I", "C") + pgs(R9);
-      o.dose.push("ERC 2025: <b>8 mmol</b> e.v. in 10 min, ripetibili una volta" + pgs(ERC39) + ".");
-      o.dose.push("EHRA: <b>1–2 g</b> di magnesio solfato in 30–60 s, ripetibili dopo 5–15 min, con magnesiemia &lt;0,5 mmol/L e aritmia pericolosa" + pgs("EHRA 2024, Tab. 5, p. 9") + ".");
-      o.tetto = "dose fissa; con l'insufficienza renale grave la scheda non va oltre 20 g in 48 h" + st("magnesio solfato", "4.2") + ".";
-      o.rene = cl + "controindicato nell'insufficienza renale grave, e si elimina solo dal rene" + st("magnesio solfato", "4.2, 4.3") + dv() + " la soglia di clearance di «grave».";
-      o.conf = "Divergenza: la ESC 2022 non dà la dose. 8 mmol sono circa 2 g di solfato: la quantità coincide, la velocità no (10 min contro 30–60 s); la più prudente è quella dell'ERC (prontuario del capitolo).";
+      x = reneDose("mg", rn);
+      if (x === "ris") o.dose.push(nd(rn, "sotto 30 mL/min", "decide lo specialista"));
+      else if (x === "manca") o.dose.push(serveCl(rn, "sotto 30 mL/min decide lo specialista") + ".");
+      else {
+        o.dose.push("ERC 2025: <b>8 mmol</b> e.v. in 10 min, ripetibili una volta" + pgs(ERC39) + ".");
+        o.dose.push("EHRA: <b>1–2 g</b> di magnesio solfato in 30–60 s, ripetibili dopo 5–15 min, con magnesiemia &lt;0,5 mmol/L e aritmia pericolosa" + pgs("EHRA 2024, Tab. 5, p. 9") + ".");
+      }
+      o.tetto = x !== "ok" ? "" : "dose fissa; il massimo di 20 g in 48 h della scheda vale nella grave insufficienza renale, che lo strumento legge sotto 30" + st("magnesio solfato", "4.2") + ".";
+      var mgDue = "la 4.3 lo controindica nella «compromissione renale grave», la 4.2 dà nella «grave insufficienza renale» un massimo di 20 g in 48 ore; grave = ClCr &lt;30, lettura nostra: le due frasi non si accordano" + st("magnesio solfato", "4.2, 4.3");
+      o.rene = cl + (x === "ris" ? (rn.dialisi ? "" : "<b>sotto 30</b>: ") + mgDue + ". <b>Nessuna dose: decide lo specialista.</b>"
+        : (x === "manca" ? "— sotto 30 mL/min " + mgDue + ", e decide lo specialista; fra 30 e 60 cautela."
+        : (rn.crcl < SOGLIE.irc ? "fra 30 e 60 «usare con cautela in caso di compromissione renale di grado meno severo»" + st("magnesio solfato", "4.4") + "; sotto 30 decide lo specialista."
+        : "da 60 in su nessuna delle soglie della scheda si applica: sotto 60 cautela, sotto 30 decide lo specialista" + st("magnesio solfato", "4.2–4.4") + ".")))
+        + " È escreto unicamente dai reni" + st("magnesio solfato", "5.2") + ", e per via e.v. con l'insufficienza renale può dare intossicazione da magnesio" + st("magnesio solfato", "4.4") + ".";
+      if (avvisoAgg(rn, "mg")) o.note.push(avvisoAgg(rn, "mg"));
+      o.conf = x !== "ok" ? "" : "Divergenza: la ESC 2022 non dà la dose. 8 mmol sono circa 2 g di solfato: la quantità coincide, la velocità no (10 min contro 30–60 s); la più prudente è quella dell'ERC (prontuario del capitolo).";
       o.note.push("Le schede tecniche italiane non hanno la torsione fra le indicazioni (eclampsia, ipomagnesiemia, nutrizione parenterale) e controindicano i pazienti con aritmie cardiache o danno del miocardio: l'uso è fuori indicazione e contro una controindicazione scritta" + sts("magnesio solfato, quattro prodotti uguali") + ".");
     }
     if (id === "k") {
       o.ruolo = "con il magnesio nella torsione di punta " + cp("I", "C") + pgs(R9);
-      o.dose.push("<b>20–40 mmol/L</b> di KCl in 500 mL di fisiologica, <b>non oltre 20 mmol/h</b>; più veloce solo in emergenza, da vena centrale" + pgs("EHRA 2024, Tab. 5, p. 8") + "; obiettivo il limite alto della norma" + pgs("EHRA 2024, p. 12") + ".");
-      o.tetto = "20 mmol/h" + pgs("EHRA 2024, Tab. 5, p. 8") + "; la scheda tecnica di regola 10 mEq/h, metà dell'EHRA: nel dubbio la più bassa" + st("potassio cloruro", "4.2") + ".";
-      o.rene = cl + "solo a funzione renale integra; controindicato nell'insufficienza renale grave" + st("potassio cloruro", "4.2, 4.3") + dv() + " la soglia di clearance.";
+      x = reneDose("k", rn);
+      if (x === "no") o.dose.push(nd(rn, "sotto 30 mL/min", "controindicato"));
+      else if (x === "ris") o.dose.push(nd(rn, "fra 30 e 60 mL/min", "decide lo specialista"));
+      else if (x === "manca") o.dose.push(serveCl(rn, "sotto 60 mL/min decide lo specialista, sotto 30 è controindicato") + ".");
+      else o.dose.push("<b>20–40 mmol/L</b> di KCl in 500 mL di fisiologica, <b>non oltre 20 mmol/h</b>; più veloce solo in emergenza, da vena centrale" + pgs("EHRA 2024, Tab. 5, p. 8") + "; obiettivo il limite alto della norma" + pgs("EHRA 2024, p. 12") + ".");
+      o.tetto = x !== "ok" ? "" : "20 mmol/h" + pgs("EHRA 2024, Tab. 5, p. 8") + "; la scheda tecnica di regola 10 mEq/h, metà dell'EHRA: nel dubbio la più bassa" + st("potassio cloruro", "4.2") + ".";
+      var kIntegra = "la 4.2 lo vuole «solo a funzionalità renale integra»", kCi = "«Grave insufficienza epatica, renale e surrenale» fra le controindicazioni (4.3), grave = ClCr &lt;30, lettura nostra";
+      var kDue = kIntegra + ", la 4.4 lo ammette con cautela nell'insufficienza renale, per la ritenzione di potassio: le due frasi non si accordano" + st("potassio cloruro", "4.2, 4.4");
+      o.rene = cl + (x === "no" ? (rn.dialisi ? "" : "<b>sotto 30</b>: ") + kCi + "; " + kIntegra + st("potassio cloruro", "4.2, 4.3") + ": <b>controindicato</b>."
+        : (x === "ris" ? "<b>fra 30 e 60</b> (insufficienza renale, lettura nostra): " + kDue + ". <b>Nessuna dose: decide lo specialista.</b> Sotto 30 controindicato (4.3)."
+        : (x === "manca" ? "— fra 30 e 60 mL/min (insufficienza renale, lettura nostra) " + kDue + ", e decide lo specialista; sotto 30 " + kCi + "."
+        : "da 60 in su la funzione renale è integra, per la lettura dello strumento: " + kIntegra + st("potassio cloruro", "4.2") + "; fra 30 e 60 decide lo specialista, sotto 30 è controindicato (4.3).")));
+      if (avvisoAgg(rn, "k")) o.note.push(avvisoAgg(rn, "k"));
       o.conf = "Divergenza: la ESC 2022 chiede il supplemento senza dare la dose" + pgs(R9) + ".";
     }
     if (id === "vera") {
@@ -1154,7 +1247,7 @@ html.js.motore-ko #nomotore{display:block}
     return s;
   }
 
-  var ST_CHIP = { nel:["k1", "nel percorso"], evita:["k4", "da evitare qui"], altro:["kx", "non nel percorso"], manca:["kx", "—"] };
+  var ST_CHIP = { nel:["k1", "nel percorso"], ris:["k2", "con riserva"], evita:["k4", "da evitare qui"], altro:["kx", "non nel percorso"], manca:["kx", "—"] };
 
   function cardFarmaco(id, s, rn, pe) {
     var o = scheda(id, s, rn), h = "", i, c = pe ? ST_CHIP[pe.st] : null;
@@ -1172,13 +1265,13 @@ html.js.motore-ko #nomotore{display:block}
   function disegnaRene(s, rn) {
     var hr = "", cl = rn.cl, inc = incroci(rn), i, tx = [];
     if (cl.clcr !== null) {
-      hr += '<div class="esito"><span class="big">Clearance ' + nf(cl.clcr) + " mL/min</span>" + chip(cl.clcr < 30 ? "k4" : (cl.clcr < 60 ? "k3" : "k1"), "Cockcroft-Gault, peso reale " + nf(s.peso) + " kg") + "</div>";
+      hr += '<div class="esito"><span class="big">Clearance ' + nfCl(cl.clcr) + " mL/min</span>" + chip(cl.clcr < 30 ? "k4" : (cl.clcr < 60 ? "k3" : "k1"), "Cockcroft-Gault, peso reale " + nf(s.peso) + " kg") + "</div>";
       hr += '<div class="muted" style="font-size:12.5px;margin-bottom:4px">Creatinina ' + cl.mg.toFixed(2).replace(".", ",") + " mg/dL = " + nf(cl.umol, 0) + " µmol/L (1 mg/dL = 88,4 µmol/L)" + (cl.bmi !== null ? " · BMI " + nf(cl.bmi) : "") + "</div>";
-      if (cl.agg !== null) hr += '<div class="esito">' + chip("kx", "peso aggiustato " + nf(cl.pesoAgg, 0) + " kg: clearance " + nf(cl.agg)) + '<span class="muted">accanto, non decide (ideale di Devine ' + nf(cl.ibw, 0) + " kg + 0,4 × l'eccesso)</span></div>";
+      if (cl.agg !== null) hr += '<div class="esito">' + chip("kx", "peso aggiustato " + nf(cl.pesoAgg, 0) + " kg: clearance " + nfCl(cl.agg)) + '<span class="muted">accanto, non decide (ideale di Devine ' + nf(cl.ibw, 0) + " kg + 0,4 × l'eccesso)</span></div>";
       if (inc.length) { for (i = 0; i < inc.length; i++) tx.push(inc[i].nome + " (soglia " + inc[i].s + ")"); hr += nota("", "<b>Ai lati di una soglia</b>: peso reale e peso aggiustato cadono ai lati opposti per " + tx.join("; ") + ". Decide il peso reale (decisione del medico, 03/10/2026); la scelta resta clinica."); }
     } else hr += '<div class="esito">' + chip("kx", "clearance —") + '<span class="muted">mancano: ' + cl.manca.join(", ") + "</span></div>";
-    if (rn.dialisi) hr += '<div class="esito">' + chip("k4", "dialisi o terminale") + '<span class="muted">esclude la procainamide (ESC p. 4030), la flecainide e la mexiletina</span></div>';
-    hr += '<div class="muted" style="font-size:12.5px;margin-top:4px">Le soglie numeriche di clearance in questo strumento sono tre: flecainide sotto 35 (ESC Tab. 8, p. 4036), mexiletina sotto 30 (scheda tecnica britannica) e procainamide sotto 15, la lettura dello strumento dell\'insufficienza renale terminale della p. 4030, che non dà un numero (DA VERIFICARE). Per gli altri farmaci le schede dicono «insufficienza grave» senza un numero: il valore di questo paziente è accanto, e la soglia resta DA VERIFICARE.</div>';
+    if (rn.dialisi) hr += '<div class="esito">' + chip("k4", "dialisi o terminale") + '<span class="muted">esclude la procainamide (ESC p. 4030), la flecainide, la mexiletina, il metoprololo e il potassio; landiololo: decide il centro; magnesio e propranololo per bocca: decide lo specialista</span></div>';
+    hr += '<div class="muted" style="font-size:12.5px;margin-top:4px">Le soglie di clearance in questo strumento: flecainide sotto 35 (ESC Tab. 8, p. 4036), mexiletina sotto 30 (scheda tecnica britannica) e procainamide sotto 15, la lettura dello strumento dell\'insufficienza renale terminale della p. 4030, che non dà un numero (DA VERIFICARE). Dove la scheda tecnica scrive «grave» senza numero lo strumento legge ClCr sotto 30 (metoprololo, magnesio, potassio); dove scrive «insufficienza» o «compromissione renale» senza grado, sotto 60 (landiololo, propranololo per bocca, potassio): letture nostre, regole del medico. Per gli altri farmaci le schede non dicono di quanto ridurre la dose: il valore di questo paziente è accanto.</div>';
     return hr;
   }
 
@@ -1243,7 +1336,7 @@ html.js.motore-ko #nomotore{display:block}
     for (i = 0; i < FARM.length; i++) {
       k = FARM[i]; pe = pert(k, s, t, r, rn);
       var blocco = '<div class="card farm s-' + pe.st + '" id="d_' + k + '">' + cardFarmaco(k, s, rn, pe) + "</div>";
-      if (pe.st === "nel" || pe.st === "evita") hn += blocco; else ha += blocco;
+      if (pe.st === "nel" || pe.st === "ris" || pe.st === "evita") hn += blocco; else ha += blocco;
     }
     el("farmNel").innerHTML = hn || '<div class="card"><span class="muted">— nessun farmaco nel percorso: ' + (r.k ? "il ramo «" + nomeRamo(s, r) + "» non ne nomina uno" : (t.k === null ? t.manca : (t.prosegue ? r.manca : "il percorso si è fermato al passo 1"))) + ".</span></div>";
     el("farmAltri").innerHTML = ha;
@@ -1259,6 +1352,7 @@ html.js.motore-ko #nomotore{display:block}
     lim.push("La scala dell'EHRA (categoria, evidenza, forza a barre) non è una classe ESC e non si traduce in una: ha un segno suo, tratteggiato.");
     lim.push("Carico aritmico, TV incessante, cardiopatia strutturale, recidiva e ablazione «non possibile» sono giudizi clinici: lo strumento li prende come li dai.");
     lim.push("Clearance di Cockcroft-Gault sul peso reale, che decide; con BMI ≥30 accanto quella sul peso aggiustato (ideale di Devine + 0,4 × l'eccesso), con un avviso se le due cadono ai lati di una soglia (decisione del medico, 03/10/2026). Le schede tecniche non dicono su quale peso.");
+    lim.push("Rene senza numero nella scheda tecnica: «grave» letta ClCr &lt;30 (metoprololo, magnesio, potassio), «insufficienza» o «compromissione renale» senza grado letta ClCr &lt;60 (landiololo, propranololo per bocca, potassio). Dove due frasi della scheda non si accordano — landiololo sotto 60, propranololo per bocca sotto 60, magnesio sotto 30, potassio fra 30 e 60 — lo strumento non dà la dose: decide il centro o lo specialista. Senza la clearance la dose di questi farmaci è «—». Letture nostre, come nel prontuario del capitolo.");
     if (rn.crcl !== null && s.alt === null) lim.push("Altezza non indicata: il BMI non si calcola e manca il confronto col peso aggiustato; nell'obeso la clearance sul peso reale la sovrastima.");
     if (s.eta !== null && !etaOk(s)) lim.push("Età fuori dall'adulto (18–110 anni): né la clearance né le dosi per peso si calcolano.");
     if (s.peso !== null && !pesoOk(s)) lim.push("Peso fuori scala (25–250 kg): le dosi per peso non si calcolano.");
@@ -1273,7 +1367,7 @@ html.js.motore-ko #nomotore{display:block}
     var BT = { tempesta:["k4", "tempesta"], incess:["k4", "TV incessante"], grappolo:["k3", "a grappolo"], singolo:["k1", "non è una tempesta"], zero:["k1", "non è una tempesta"], inapp:["k2", "terapie inappropriate"], nonnec:["k2", "terapie non necessarie"] };
     if (t.k) bar("barTemp", BT[t.k][0], BT[t.k][1]); else bar("barTemp", "kx", "—");
     bar("barRamo", r.k ? "k1" : "kx", r.k ? nomeRamo(s, r) : "—");
-    bar("barRene", rn.dialisi ? "k4" : (rn.crcl !== null ? (rn.crcl < 30 ? "k4" : (rn.crcl < 60 ? "k3" : "k1")) : "kx"), rn.dialisi ? "dialisi" : (rn.crcl !== null ? "ClCr " + nf(rn.crcl, 0) : "—"));
+    bar("barRene", rn.dialisi ? "k4" : (rn.crcl !== null ? (rn.crcl < 30 ? "k4" : (rn.crcl < 60 ? "k3" : "k1")) : "kx"), rn.dialisi ? "dialisi" : (rn.crcl !== null ? "ClCr " + nfCl(rn.crcl, true) : "—"));
     var FK = { basso:"k0", intermedio:"k2", alto:"k4" };
     if (pa.tot !== null) bar("barPain", FK[pa.fascia], pa.tot + " · " + pa.fascia);
     else bar("barPain", pa.fascia ? FK[pa.fascia] : "kx", pa.fascia ? "≥" + pa.lo + " · " + pa.fascia : "—");
@@ -1297,7 +1391,7 @@ html.js.motore-ko #nomotore{display:block}
     window.scrollTo(0, 0);
   });
 
-  window.TEMPESTA_MOTORE = { clearance:clearance, rene:rene, incroci:incroci, tempesta:tempesta, ramo:ramo, painesd:painesd, fasciaP:fasciaP, numeri:numeri, pert:pert, percorso:percorso };
+  window.TEMPESTA_MOTORE = { clearance:clearance, rene:rene, incroci:incroci, reneDose:reneDose, nfCl:nfCl, tempesta:tempesta, ramo:ramo, painesd:painesd, fasciaP:fasciaP, numeri:numeri, pert:pert, percorso:percorso };
   disegna();
 })();
 </script>
